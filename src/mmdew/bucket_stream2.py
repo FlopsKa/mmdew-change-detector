@@ -50,9 +50,10 @@ class BucketStream:
         XY = 2 / np.sum(end.n_XY) * np.sum(end.XY)
 
         #return XX + YY - XY, m*1000, n*1000
-        return XX + YY - XY, int(np.sqrt(end.n_XX)), int(np.sqrt(start.n_XX)) #, XX, YY, XY
-  #      return XX + YY - XY, int(np.sqrt(end.n_XX)), int(np.sqrt(np.sum(end.n_XY))) #, XX, YY, XY
 
+        #return XX + YY - XY, int(np.sqrt(end.n_XX)), int(np.sqrt(start.n_XX))
+        return XX + YY - XY, min(np.sqrt(end.n_XX), np.sqrt(start.n_XX)), np.sum(end.n_XY)
+                
     def _is_change(self, split):
         distance, m, n = self.mmd(split)
         threshold = self.maximum_mean_discrepancy.threshold(m=m, n=n, alpha=self.alpha)
