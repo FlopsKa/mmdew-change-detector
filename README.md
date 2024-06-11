@@ -7,7 +7,7 @@ __Maximum Mean Discrepancy on Exponential Windows for Online Change Detection__.
 
 ## Installation
 
-To install the package and its dependencies, run the following commands.
+To install the package and its dependencies, clone the repository, and run the following commands.
 
     conda create -n mmdew python=3.11
     conda activate mmdew
