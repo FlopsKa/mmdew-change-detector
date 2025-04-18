@@ -34,8 +34,8 @@ For producing the ARL and MTD results, we use the `src/run_experiment.py` script
 with the output of either `src/arl_experiments.py` or `src/mtd_experiments.py`.
 E.g., to run the scripts parallely on 8 cores, one may use:
 
-  python src/arl_experiments.py | xargs -P 8 -L 1 python src/run_experiment.py
-  python src/mtd_experiments.py | xargs -P 8 -L 1 python src/run_experiment.py
+    python src/arl_experiments.py | xargs -P 8 -L 1 python src/run_experiment.py
+    python src/mtd_experiments.py | xargs -P 8 -L 1 python src/run_experiment.py
 
 Or, to run both:
 
