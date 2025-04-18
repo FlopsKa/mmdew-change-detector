@@ -7,7 +7,6 @@ import pickle
 
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import KBinsDiscretizer
-from tensorflow import keras
 
 from abc import abstractmethod, ABCMeta, ABC
 from typing import Protocol, runtime_checkable
@@ -72,7 +71,7 @@ class Constant(ChangeStream):
     def _is_change(self) -> bool:
         return self._change_points[self.sample_idx]
 
-    
+
 class TrafficUnif(ChangeStream):
     def __init__(self, preprocess=None, max_len=None):
         df = pd.read_csv("../data/traffic/traffic.csv",sep=";",decimal=",")
@@ -81,7 +80,7 @@ class TrafficUnif(ChangeStream):
         df["Class"] = est.transform(df["Slowness in traffic (%)"].values.reshape(-1,1))
 
         df = get_perm_for_cd(df)
-         
+
         data = df.drop("Class", axis=1).to_numpy()
         y = df["Class"].to_numpy()
 
@@ -128,6 +127,8 @@ class GasSensors(ChangeStream):
 
 class MNIST(ChangeStream):
     def __init__(self, preprocess=None, max_len = None):
+        from tensorflow import keras
+
         (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
         x_train = np.reshape(x_train, newshape=(len(x_train), x_train.shape[1] * x_train.shape[2]))
         x_test = np.reshape(x_test, newshape=(len(x_test), x_test.shape[1] * x_test.shape[2]))
@@ -158,6 +159,8 @@ class MNIST(ChangeStream):
 
 class FashionMNIST(ChangeStream):
     def __init__(self, preprocess=None, max_len=None):
+        from tensorflow import keras
+
         (x_train, y_train), (x_test, y_test) = keras.datasets.fashion_mnist.load_data()
         x_train = np.reshape(x_train, newshape=(len(x_train), x_train.shape[1] * x_train.shape[2]))
         x_test = np.reshape(x_test, newshape=(len(x_test), x_test.shape[1] * x_test.shape[2]))
@@ -210,7 +213,7 @@ class HAR(ChangeStream):
             y = y[:max_len]
         if preprocess:
             data = preprocess(data)
-                    
+
         self._change_points = np.diff(y, prepend=y[0]).astype(bool)
         super(HAR, self).__init__(data=data, y=y)
 
@@ -285,8 +288,8 @@ class ImageNet(ChangeStream):
         return self._change_points
 
     def _is_change(self) -> bool:
-        return self._change_points[self.sample_idx] 
-    
+        return self._change_points[self.sample_idx]
+
 class Uniform(ChangeStream):
     def __init__(self, n, preprocess=None, max_len=None):
         self.n = n
@@ -309,7 +312,7 @@ class Uniform(ChangeStream):
 
     def _is_change(self) -> bool:
         return self._change_points[self.sample_idx]
-        
+
 class Laplace(ChangeStream):
     def __init__(self, n, scale=3, preprocess=None, max_len=None):
         self.n = n
@@ -340,7 +343,7 @@ class Mixed(ChangeStream):
         p1 = np.random.default_rng().normal(size=(n,5))
         data = np.random.default_rng().normal(scale=scale**2,size=(n,5))
         data[alpha < proba] = p1[alpha<proba]
-        
+
         y = np.zeros(n)
 
         if max_len:
@@ -359,7 +362,7 @@ class Mixed(ChangeStream):
 
     def _is_change(self) -> bool:
         return self._change_points[self.sample_idx]
-    
+
 class NormalToUniform(ChangeStream):
     def __init__(self, n1, n2, preprocess=None, max_len=None):
         self.n = n1+n2
@@ -384,7 +387,7 @@ class NormalToUniform(ChangeStream):
 
     def _is_change(self) -> bool:
         return self._change_points[self.sample_idx]
-    
+
 class NormalToLaplace(ChangeStream):
     def __init__(self, n1, n2, scale=3, preprocess=None, max_len=None):
         self.n = n1+n2
@@ -409,7 +412,7 @@ class NormalToLaplace(ChangeStream):
 
     def _is_change(self) -> bool:
         return self._change_points[self.sample_idx]
-    
+
 class NormalToMixed(ChangeStream):
     def __init__(self, n1, n2, scale=3, proba=0.3, preprocess=None, max_len=None):
         self.n = n1+n2

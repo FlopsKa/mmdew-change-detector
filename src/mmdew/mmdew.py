@@ -2,7 +2,7 @@ import numpy as np
 import mmdew.fast_rbf_kernel as fast_rbf
 
 class MMDEW:
-    def __init__(self, gamma, alpha=0.01, min_elements_per_window=1, max_windows=0, cooldown=500, seed=1234):   
+    def __init__(self, gamma, alpha=0.01, min_elements_per_window=1, max_windows=0, cooldown=500, seed=1234):
         self.gamma = gamma
         self.alpha = alpha
         self.min_elements_per_window = min_elements_per_window
@@ -13,6 +13,7 @@ class MMDEW:
         self.total_insertions = 0
         self.cooldown = cooldown
         self.cooling_down = 0
+        self.stats = [] # store all mmd values to tune the threshold separately
 
     def insert(self, element):
         self.total_insertions += 1
@@ -31,14 +32,14 @@ class MMDEW:
         if self.max_windows > 0 and len(self.windows) > self.max_windows:
             self.windows = self.windows[1:]
             for w in self.windows:
-                w.XY = w.XY[:-1]    
+                w.XY = w.XY[:-1]
                 w.n_XY = w.n_XY[:-1]
         self.cooling_down -= 1
         while split := self.has_change() > 0 :
             if self.cooling_down <= 0:
                 self.changes_detected_at += [self.total_insertions]
                 self.cooling_down = self.cooldown
-                
+
             self.windows = self.windows[split:]
             for w in self.windows:
                 w.XY = w.XY[:-split]
@@ -50,7 +51,7 @@ class MMDEW:
         XX += np.sum([2*xy for w in self.windows[:split] for xy in w.XY[:split]])
         n_XX = np.sum([w.n_XX for w in self.windows[:split]])
         n_XX += np.sum([2*n_xy for w in self.windows[:split] for n_xy in w.n_XY[:split]])
-    
+
         YY = np.sum([w.XX for w in self.windows[split:]])
         YY += np.sum([2*xy for w in self.windows[split:] for xy in w.XY[:-split]])
         n_YY = np.sum([w.n_XX for w in self.windows[split:]])
@@ -61,14 +62,19 @@ class MMDEW:
 
         mmd = 1/n_XX * XX + 1/n_YY * YY - 2/n_XY * XY
         return mmd, int(np.sqrt(n_XX)), int(np.sqrt(n_YY)), int(np.sqrt(n_XY))
-    
+
 
     def has_change(self):
+        mymmd = 0
         for split in range(1,len(self.windows)):
             stat, n_XX, n_YY, n_XY = self.mmd_at_position(split)
-            threshold = self.threshold(max(n_XX,1),max(n_YY,1),self.alpha/(len(self.windows)-1))
-            if stat >= threshold:
-                return split
+            #mymmd += stat #max(stat,mymmd)
+            mymmd = max(stat,mymmd)
+            #threshold = self.threshold(max(n_XX,1),max(n_YY,1),self.alpha/(len(self.windows)-1))
+            #if stat >= threshold:
+            #    return split
+        #self.stats += [mymmd/(len(self.windows)-1) if len(self.windows) > 1 else 0]
+        self.stats += [mymmd]
         return 0
 
     def merge(self):
@@ -79,11 +85,11 @@ class MMDEW:
         if X1.length == X0.length:
             X1.length *= 2
             sample_size = int(np.log2(X1.length))
-            if X1.length < self.min_elements_per_window:
+            if X1.length <= self.min_elements_per_window:
                 X1.elements = np.concatenate((X1.elements,X0.elements))
             else:
                 X1.elements = self.rng.choice(np.concatenate((X1.elements,X0.elements)), size=sample_size, replace=False)
-            
+
             X1.XX += X0.XX + 2* X0.XY[0]
             X1.n_XX += X0.n_XX + 2* X0.n_XY[0]
             X1.XY = [xy + X0.XY[i+1] for i, xy in enumerate(X1.XY)]
@@ -94,7 +100,7 @@ class MMDEW:
 
     def k(self, x, y):
         return fast_rbf.sum_k(x,y,gamma=self.gamma)
-    
+
     def threshold(self,m,n,alpha):
         K = 1
         return (
